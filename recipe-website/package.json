@@ -1,0 +1,29 @@
+{
+  "name": "recipe-collection-website",
+  "version": "1.0.0",
+  "description": "A beautiful web application for storing and organizing cooking recipes",
+  "main": "index.html",
+  "scripts": {
+    "start": "python -m http.server 8000",
+    "serve": "python -m http.server 8000"
+  },
+  "keywords": [
+    "recipes",
+    "cooking",
+    "food",
+    "web-app",
+    "html",
+    "css",
+    "javascript"
+  ],
+  "author": "Your Name",
+  "license": "MIT",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/yourusername/recipe-collection-website.git"
+  },
+  "bugs": {
+    "url": "https://github.com/yourusername/recipe-collection-website/issues"
+  },
+  "homepage": "https://github.com/yourusername/recipe-collection-website#readme"
+}
