@@ -1,2 +1,0 @@
-# recipes
-appka na recipes
