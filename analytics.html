@@ -1,0 +1,474 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Advanced Analytics - Strava Activity Tracker</title>
+    <link rel="icon" type="image/svg+xml" href="favicon.svg">
+    <link rel="stylesheet" href="css/styles.css">
+    
+    <!-- Chart.js -->
+    <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
+</head>
+<body>
+    <nav class="navbar">
+        <div class="nav-container">
+            <button id="hamburger-btn" class="hamburger-menu" aria-label="Menu">
+                <span></span>
+                <span></span>
+                <span></span>
+            </button>
+            <div class="nav-logo">
+                <svg width="40" height="40" viewBox="0 0 60 60" fill="none">
+                    <path d="M30 5L45 35H15L30 5Z" fill="#FC4C02"/>
+                    <path d="M30 35L37.5 50H22.5L30 35Z" fill="#FC4C02" opacity="0.6"/>
+                </svg>
+                <span>Datable</span>
+            </div>
+            <div class="nav-user">
+                <span id="user-name">Loading...</span>
+                <button id="settings-btn" class="btn btn-icon" title="Settings">⚙️</button>
+            </div>
+        </div>
+    </nav>
+
+    <!-- Slide-in Menu -->
+    <div id="slide-menu" class="slide-menu">
+        <div class="slide-menu-header">
+            <h2>Menu</h2>
+            <button id="close-menu-btn" class="close-menu-btn" aria-label="Close menu">&times;</button>
+        </div>
+        <nav class="slide-menu-nav">
+            <a href="dashboard.html" class="menu-item">
+                <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                    <rect x="3" y="3" width="7" height="7"></rect>
+                    <rect x="14" y="3" width="7" height="7"></rect>
+                    <rect x="14" y="14" width="7" height="7"></rect>
+                    <rect x="3" y="14" width="7" height="7"></rect>
+                </svg>
+                <span>Dashboard</span>
+            </a>
+            <a href="heatmap.html" class="menu-item">
+                <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                    <polygon points="1 6 1 22 8 18 16 22 23 18 23 2 16 6 8 2 1 6"></polygon>
+                    <line x1="8" y1="2" x2="8" y2="18"></line>
+                    <line x1="16" y1="6" x2="16" y2="22"></line>
+                </svg>
+                <span>Heat Map</span>
+            </a>
+            <a href="analytics.html" class="menu-item active">
+                <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                    <line x1="18" y1="20" x2="18" y2="10"></line>
+                    <line x1="12" y1="20" x2="12" y2="4"></line>
+                    <line x1="6" y1="20" x2="6" y2="14"></line>
+                </svg>
+                <span>Advanced Analytics</span>
+            </a>
+            <a href="hr-calculator.html" class="menu-item">
+                <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                    <path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z"></path>
+                </svg>
+                <span>HR Calculator</span>
+            </a>
+            <a href="settings.html" class="menu-item">
+                <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                    <circle cx="12" cy="12" r="3"></circle>
+                    <path d="M12 1v6m0 6v6m-9-9h6m6 0h6"></path>
+                </svg>
+                <span>Settings</span>
+            </a>
+        </nav>
+    </div>
+
+    <!-- Menu Overlay -->
+    <div id="menu-overlay" class="menu-overlay"></div>
+
+    <div class="analytics-container">
+        <!-- Page Header -->
+        <div class="analytics-header">
+            <h1>📈 Advanced Analytics</h1>
+            <p class="analytics-subtitle">Deep dive into your activity data with comparative year analysis</p>
+        </div>
+
+        <!-- Sport Filter and Year Target - Combined Row -->
+        <div class="analytics-filters-row">
+            <!-- Sport Filter -->
+            <div class="analytics-sport-filter-inline">
+                <label class="filter-label">Sport Filter</label>
+                <select id="analytics-sport-filter" class="sport-dropdown">
+                    <option value="Ride">Cycling</option>
+                    <option value="VirtualCycling">Virtual Cycling</option>
+                    <option value="Run">Running</option>
+                    <option value="Walk">Walking</option>
+                    <option value="Hike">Hiking</option>
+                    <option value="Badminton">Badminton</option>
+                    <option value="all">All Sports</option>
+                </select>
+            </div>
+
+            <!-- Year Target Setting -->
+            <div class="year-target-container-inline">
+                <label class="filter-label">Annual Target</label>
+                <div class="target-input-wrapper-inline">
+                    <input type="number" id="year-target-input" class="target-input" placeholder="km" min="0" step="100">
+                    <button id="save-target-btn" class="save-target-btn">Set</button>
+                </div>
+            </div>
+            
+            <!-- Target Status Display -->
+            <div id="target-status" class="target-status-inline" style="display: none;">
+                <span class="target-label">Target:</span>
+                <span id="current-target-display" class="target-value">0 km</span>
+                <span id="target-progress-status" class="progress-status"></span>
+            </div>
+        </div>
+
+        <!-- Distance Progress Chart -->
+        <div class="analytics-chart-card">
+            <div class="analytics-chart-header">
+                <h2>📏 Distance Progress</h2>
+                <div class="chart-controls">
+                    <!-- Period Toggle -->
+                    <div class="period-toggle">
+                        <button class="period-btn" data-period="day">Day</button>
+                        <button class="period-btn active" data-period="week">Week</button>
+                        <button class="period-btn" data-period="month">Month</button>
+                    </div>
+                    <!-- Year Selection -->
+                    <div class="year-selector">
+                        <label>Years to Compare:</label>
+                        <div id="distance-year-checkboxes" class="year-checkboxes">
+                            <!-- Years will be dynamically added here -->
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <div class="analytics-chart-container">
+                <canvas id="distanceProgressChart"></canvas>
+            </div>
+        </div>
+
+        <!-- Elevation Progress Chart -->
+        <div class="analytics-chart-card">
+            <div class="analytics-chart-header">
+                <h2>⛰️ Elevation Progress</h2>
+                <div class="chart-controls">
+                    <!-- Period Toggle -->
+                    <div class="period-toggle">
+                        <button class="period-btn-elevation" data-period="day">Day</button>
+                        <button class="period-btn-elevation active" data-period="week">Week</button>
+                        <button class="period-btn-elevation" data-period="month">Month</button>
+                    </div>
+                    <!-- Year Selection -->
+                    <div class="year-selector">
+                        <label>Years to Compare:</label>
+                        <div id="elevation-year-checkboxes" class="year-checkboxes">
+                            <!-- Years will be dynamically added here -->
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <div class="analytics-chart-container">
+                <canvas id="elevationProgressChart"></canvas>
+            </div>
+        </div>
+
+        <!-- Heart Rate Zone Analysis -->
+        <div class="analytics-chart-card" id="hr-zone-card">
+            <div class="analytics-chart-header">
+                <h2>💓 Zone 2 Training Analysis</h2>
+                <p class="chart-description">Zone 2: 125-150 BPM</p>
+                <div class="hr-zone-stats-compact">
+                    <div class="hr-stat-compact">
+                        <span class="hr-stat-label-compact">Zone 2:</span>
+                        <span class="hr-stat-value-compact" id="zone2-hours">0 h</span>
+                    </div>
+                    <div class="hr-stat-separator">|</div>
+                    <div class="hr-stat-compact">
+                        <span class="hr-stat-label-compact">Total:</span>
+                        <span class="hr-stat-value-compact" id="total-hours">0 h</span>
+                    </div>
+                    <div class="hr-stat-separator">|</div>
+                    <div class="hr-stat-compact">
+                        <span class="hr-stat-label-compact">Z2%:</span>
+                        <span class="hr-stat-value-compact" id="zone2-percentage">0%</span>
+                    </div>
+                </div>
+                <div class="chart-controls">
+                    <div class="period-toggle">
+                        <button class="period-btn-hr" data-period="day">Day</button>
+                        <button class="period-btn-hr active" data-period="week">Week</button>
+                        <button class="period-btn-hr" data-period="month">Month</button>
+                    </div>
+                    <div class="year-selector">
+                        <label>Years to Compare:</label>
+                        <div id="hr-year-checkboxes" class="year-checkboxes"></div>
+                    </div>
+                </div>
+            </div>
+            <div class="analytics-chart-container" style="position: relative;">
+                <canvas id="hrZoneChart"></canvas>
+                <div id="hrTooltip" class="hr-custom-tooltip"></div>
+                <div id="hrLoadingBadge" class="hr-loading-badge">
+                    <div class="hr-loading-spinner"></div>
+                    <span class="hr-loading-text">Analyzing HR zones... <span id="hrLoadingProgress">0%</span></span>
+                </div>
+            </div>
+        </div>
+
+        <!-- Activity Calendar (GitHub-style) -->
+        <div class="analytics-chart-card">
+            <div class="analytics-chart-header">
+                <h2>📅 Activity Calendar</h2>
+                <p class="chart-description">Your training consistency throughout the year. Darker shades indicate longer periods without activity.</p>
+                <div class="calendar-controls">
+                    <label>Year:</label>
+                    <select id="calendar-year-select" class="year-select"></select>
+                </div>
+            </div>
+            <div id="activity-calendar" class="analytics-calendar-grid">
+                <!-- Calendar will be generated here -->
+            </div>
+            <div class="analytics-calendar-legend">
+                <span class="legend-label">No Activity</span>
+                <div class="analytics-legend-item" data-level="0"></div>
+                <div class="analytics-legend-item" data-level="1"></div>
+                <span class="legend-label">Activity</span>
+            </div>
+        </div>
+
+        <!-- Performance Management Chart (Fitness-Fatigue Model) -->
+        <div class="analytics-chart-card">
+            <div class="analytics-chart-header">
+                <div>
+                    <h2>💪 Performance Management Chart</h2>
+                    <p class="chart-description">Track your fitness (CTL), fatigue (ATL), and form (TSB) over time using the Fitness-Fatigue model.</p>
+                    <div class="pmc-info">
+                        <span class="pmc-info-item">
+                            <span class="pmc-legend-dot" style="background: #3B82F6;"></span>
+                            <strong>Fitness (CTL)</strong> - Long-term training load (42-day average)
+                        </span>
+                        <span class="pmc-info-item">
+                            <span class="pmc-legend-dot" style="background: #EF4444;"></span>
+                            <strong>Fatigue (ATL)</strong> - Short-term training load (7-day average)
+                        </span>
+                        <span class="pmc-info-item">
+                            <span class="pmc-legend-dot" style="background: #10B981;"></span>
+                            <strong>Form (TSB)</strong> - Training Stress Balance (CTL - ATL)
+                        </span>
+                    </div>
+                    <div class="pmc-interpretation">
+                        <p><strong>Form (TSB) Interpretation:</strong></p>
+                        <ul>
+                            <li><strong>+25 or higher:</strong> 🎯 Peak form - ready to race!</li>
+                            <li><strong>+10 to +25:</strong> ✨ Good form - feeling fresh and strong</li>
+                            <li><strong>-10 to +10:</strong> 💪 Productive training zone</li>
+                            <li><strong>-30 to -10:</strong> ⚠️ Accumulating fatigue - be careful</li>
+                            <li><strong>-30 or lower:</strong> 🚨 High risk of overtraining</li>
+                        </ul>
+                    </div>
+                </div>
+                <div class="chart-controls">
+                    <div class="period-selector">
+                        <label>Time Range:</label>
+                        <button class="period-btn-pmc active" data-period="90">3 Months</button>
+                        <button class="period-btn-pmc" data-period="180">6 Months</button>
+                        <button class="period-btn-pmc" data-period="365">1 Year</button>
+                    </div>
+                </div>
+            </div>
+            <div class="analytics-chart-container">
+                <canvas id="pmcChart"></canvas>
+            </div>
+        </div>
+
+        <!-- Speed Analysis Chart -->
+        <div class="analytics-chart-card">
+            <div class="analytics-chart-header">
+                <div>
+                    <h2>🏃 Speed Analysis</h2>
+                    <p class="chart-description">Track your average speed trends over time and analyze correlation with heart rate.</p>
+                    <div class="pmc-info" style="margin-top: 1rem;">
+                        <span class="pmc-info-item">
+                            <span class="pmc-legend-dot" style="background: #FC4C02;"></span>
+                            <strong>Orange Line</strong> - Your average speed for each activity
+                        </span>
+                        <span class="pmc-info-item">
+                            <span class="pmc-legend-dot" style="background: #3B82F6;"></span>
+                            <strong>Blue Line</strong> - Moving average trend (smoothed over multiple activities)
+                        </span>
+                    </div>
+                </div>
+                <div class="chart-controls">
+                    <div class="period-selector">
+                        <label>Time Range:</label>
+                        <button class="period-btn-speed active" data-period="90">3 Months</button>
+                        <button class="period-btn-speed" data-period="180">6 Months</button>
+                        <button class="period-btn-speed" data-period="365">1 Year</button>
+                    </div>
+                    <div class="chart-type-selector" style="margin-top: 0.5rem;">
+                        <label>Chart Type:</label>
+                        <button class="chart-type-btn-speed active" data-type="speed">Speed Trend</button>
+                        <button class="chart-type-btn-speed" data-type="speed-hr">Speed vs HR</button>
+                    </div>
+                </div>
+            </div>
+            <div class="analytics-chart-container">
+                <canvas id="speedChart"></canvas>
+            </div>
+        </div>
+
+        <!-- Heart Rate Variability Chart -->
+        <div class="analytics-chart-card">
+            <div class="analytics-chart-header">
+                <div>
+                    <h2>❤️ Heart Rate Variability</h2>
+                    <p class="chart-description">Heart rate variability metrics showing training stress and recovery patterns. Higher variability generally indicates better recovery.</p>
+                    <div class="pmc-info" style="margin-top: 1rem;">
+                        <span class="pmc-info-item">
+                            <span class="pmc-legend-dot" style="background: #EF4444;"></span>
+                            <strong>Red Line</strong> - Selected HR metric for each activity
+                        </span>
+                        <span class="pmc-info-item">
+                            <span class="pmc-legend-dot" style="background: #8B5CF6;"></span>
+                            <strong>Purple Line</strong> - Moving average (smoothed trend over 5 activities)
+                        </span>
+                    </div>
+                </div>
+                <div class="chart-controls">
+                    <div class="period-selector">
+                        <label>Time Range:</label>
+                        <button class="period-btn-hrv active" data-period="30">1 Month</button>
+                        <button class="period-btn-hrv" data-period="90">3 Months</button>
+                        <button class="period-btn-hrv" data-period="180">6 Months</button>
+                    </div>
+                    <div class="metric-selector" style="margin-top: 0.5rem;">
+                        <label>Metric:</label>
+                        <button class="metric-btn-hrv active" data-metric="variability">HR Variability</button>
+                        <button class="metric-btn-hrv" data-metric="std-dev">Std Deviation</button>
+                        <button class="metric-btn-hrv" data-metric="range">HR Range</button>
+                    </div>
+                </div>
+            </div>
+            <div class="analytics-chart-container">
+                <canvas id="hrvChart"></canvas>
+            </div>
+        </div>
+
+        <!-- Loading State -->
+        <div id="analytics-loading" class="analytics-loading">
+            <div class="loading-spinner"></div>
+            <p>Loading analytics data...</p>
+        </div>
+
+        <!-- No Data State -->
+        <div id="analytics-no-data" class="analytics-no-data hidden">
+            <p>📊 No activity data available</p>
+            <p class="subtitle">Connect your Strava account and sync activities to see analytics</p>
+            <a href="dashboard.html" class="btn btn-primary">Go to Dashboard</a>
+        </div>
+    </div>
+
+    <!-- Settings Modal (same as dashboard) -->
+    <div id="settings-modal" class="modal hidden">
+        <div class="modal-content settings-modal">
+            <span class="modal-close" id="settings-close">&times;</span>
+            <h2>⚙️ Settings</h2>
+            
+            <div class="settings-section">
+                <h3>👤 Account Information</h3>
+                <div class="settings-info-card">
+                    <div class="settings-info-item">
+                        <span class="settings-label">Email:</span>
+                        <span class="settings-value" id="settings-email">Loading...</span>
+                    </div>
+                    <div class="settings-info-item">
+                        <span class="settings-label">Name:</span>
+                        <span class="settings-value" id="settings-name">Loading...</span>
+                    </div>
+                </div>
+            </div>
+
+            <div class="settings-section">
+                <h3>🔗 Strava Connection</h3>
+                <div id="settings-strava-status">
+                    <div id="settings-not-connected" class="settings-card">
+                        <div class="settings-status">
+                            <span class="status-indicator status-disconnected">●</span>
+                            <span>Not connected to Strava</span>
+                        </div>
+                        <p class="settings-description">Connect your Strava account to sync and analyze your activities.</p>
+                        <button id="settings-connect-strava-btn" class="btn btn-strava">
+                            <svg width="20" height="20" viewBox="0 0 20 20" fill="white">
+                                <path d="M10 2L15 12H5L10 2Z"/>
+                                <path d="M10 12L12.5 17H7.5L10 12Z" opacity="0.6"/>
+                            </svg>
+                            Connect Strava Account
+                        </button>
+                    </div>
+                    <div id="settings-connected" class="settings-card hidden">
+                        <div class="settings-status">
+                            <span class="status-indicator status-connected">●</span>
+                            <span>Connected to Strava</span>
+                        </div>
+                        <p class="settings-description">Your Strava account is connected and ready to sync.</p>
+                        <div class="settings-info-item">
+                            <span class="settings-label">Athlete ID:</span>
+                            <span class="settings-value" id="settings-athlete-id">-</span>
+                        </div>
+                        <div class="settings-info-item">
+                            <span class="settings-label">Last Synced:</span>
+                            <span class="settings-value" id="settings-last-sync">Never</span>
+                        </div>
+                        <button id="settings-disconnect-strava-btn" class="btn btn-secondary">
+                            Disconnect Strava
+                        </button>
+                    </div>
+                </div>
+            </div>
+
+            <div class="settings-section">
+                <h3>� Cache Management</h3>
+                <div class="settings-card">
+                    <p class="settings-description">Clear cached data to free up space or force fresh data load. Cache is automatically managed to minimize Firestore reads.</p>
+                    <div class="settings-info-item">
+                        <span class="settings-label">Cached Items:</span>
+                        <span class="settings-value" id="settings-cache-count">Calculating...</span>
+                    </div>
+                    <div class="settings-info-item">
+                        <span class="settings-label">Cache Size:</span>
+                        <span class="settings-value" id="settings-cache-size">Calculating...</span>
+                    </div>
+                    <div class="settings-buttons">
+                        <button id="settings-clear-cache-btn" class="btn btn-secondary">
+                            🗑️ Clear All Cache
+                        </button>
+                    </div>
+                </div>
+            </div>
+
+            <div class="settings-section">
+                <h3>�🚪 Account Actions</h3>
+                <div class="settings-card">
+                    <p class="settings-description">Sign out from your account.</p>
+                    <button id="logout-btn" class="btn btn-secondary" style="width: 100%;">
+                        Logout
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Firebase SDKs -->
+    <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-app-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-auth-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore-compat.js"></script>
+    
+    <!-- App Scripts -->
+    <script src="js/db-cache.js"></script>
+    <script src="js/auth.js"></script>
+    <script src="js/strava.js"></script>
+    <script src="js/analytics.js"></script>
+    <script src="js/analytics-new-charts.js"></script>
+</body>
+</html>

@@ -1,0 +1,501 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Dashboard - Strava Activity Tracker</title>
+    <link rel="icon" type="image/svg+xml" href="favicon.svg">
+    <link rel="stylesheet" href="css/styles.css">
+    
+    <!-- Leaflet CSS for Maps -->
+    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css"
+          integrity="sha256-p4NxAoJBhIIN+hmNHrzRCf9tD/miZyoHS5obTRR9BMY="
+          crossorigin=""/>
+</head>
+<body>
+    <nav class="navbar">
+        <div class="nav-container">
+            <button id="hamburger-btn" class="hamburger-menu" aria-label="Menu">
+                <span></span>
+                <span></span>
+                <span></span>
+            </button>
+            <div class="nav-logo">
+                <svg width="40" height="40" viewBox="0 0 60 60" fill="none">
+                    <path d="M30 5L45 35H15L30 5Z" fill="#FC4C02"/>
+                    <path d="M30 35L37.5 50H22.5L30 35Z" fill="#FC4C02" opacity="0.6"/>
+                </svg>
+                <span>Datable</span>
+            </div>
+            <div class="nav-user">
+                <span id="user-name">Loading...</span>
+                <button id="settings-btn" class="btn btn-icon" title="Settings">⚙️</button>
+            </div>
+        </div>
+    </nav>
+
+    <!-- Slide-in Menu -->
+    <div id="slide-menu" class="slide-menu">
+        <div class="slide-menu-header">
+            <h2>Menu</h2>
+            <button id="close-menu-btn" class="close-menu-btn" aria-label="Close menu">&times;</button>
+        </div>
+        <nav class="slide-menu-nav">
+            <a href="dashboard.html" class="menu-item active">
+                <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                    <rect x="3" y="3" width="7" height="7"></rect>
+                    <rect x="14" y="3" width="7" height="7"></rect>
+                    <rect x="14" y="14" width="7" height="7"></rect>
+                    <rect x="3" y="14" width="7" height="7"></rect>
+                </svg>
+                <span>Dashboard</span>
+            </a>
+            <a href="heatmap.html" class="menu-item">
+                <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                    <polygon points="1 6 1 22 8 18 16 22 23 18 23 2 16 6 8 2 1 6"></polygon>
+                    <line x1="8" y1="2" x2="8" y2="18"></line>
+                    <line x1="16" y1="6" x2="16" y2="22"></line>
+                </svg>
+                <span>Heat Map</span>
+            </a>
+            <a href="analytics.html" class="menu-item">
+                <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                    <line x1="18" y1="20" x2="18" y2="10"></line>
+                    <line x1="12" y1="20" x2="12" y2="4"></line>
+                    <line x1="6" y1="20" x2="6" y2="14"></line>
+                </svg>
+                <span>Advanced Analytics</span>
+            </a>
+            <a href="hr-calculator.html" class="menu-item">
+                <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                    <path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z"></path>
+                </svg>
+                <span>HR Calculator</span>
+            </a>
+            <a href="settings.html" class="menu-item">
+                <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                    <circle cx="12" cy="12" r="3"></circle>
+                    <path d="M12 1v6m0 6v6m-9-9h6m6 0h6"></path>
+                </svg>
+                <span>Settings</span>
+            </a>
+        </nav>
+    </div>
+
+    <!-- Menu Overlay -->
+    <div id="menu-overlay" class="menu-overlay"></div>
+
+    <div class="dashboard-container">
+        <!-- Sidebar -->
+        <aside class="sidebar">
+            <!-- Sport Filter -->
+            <div class="dashboard-sport-filter">
+                <label class="filter-label">Sport Filter</label>
+                <select id="sport-filter-dropdown" class="sport-dropdown">
+                    <option value="Ride">Cycling</option>
+                    <option value="VirtualCycling">Virtual Cycling</option>
+                    <option value="Run">Running</option>
+                    <option value="Walk">Walking</option>
+                    <option value="Hike">Hiking</option>
+                    <option value="Badminton">Badminton</option>
+                    <option value="all">All Sports</option>
+                </select>
+            </div>
+
+            <div class="stats-summary">
+                <h3>Quick Stats</h3>
+                
+                <!-- All Time Stats -->
+                <div class="stat-section">
+                    <h4 class="stat-section-title">All Time</h4>
+                    <div class="stat-item">
+                        <span class="stat-label">Activities</span>
+                        <span class="stat-value" id="total-activities">0</span>
+                    </div>
+                    <div class="stat-item">
+                        <span class="stat-label">Distance</span>
+                        <span class="stat-value" id="total-distance">0 km</span>
+                    </div>
+                    <div class="stat-item">
+                        <span class="stat-label">Time</span>
+                        <span class="stat-value" id="total-time">0h</span>
+                    </div>
+                </div>
+
+                <!-- This Year Stats -->
+                <div class="stat-section">
+                    <h4 class="stat-section-title">This Year</h4>
+                    <div class="stat-item">
+                        <span class="stat-label">Activities</span>
+                        <span class="stat-value" id="year-activities">0</span>
+                    </div>
+                    <div class="stat-item">
+                        <span class="stat-label">Distance</span>
+                        <span class="stat-value" id="year-distance">0 km</span>
+                    </div>
+                    <div class="stat-item">
+                        <span class="stat-label">Time</span>
+                        <span class="stat-value" id="year-time">0h</span>
+                    </div>
+                </div>
+
+                <!-- Last Month Stats -->
+                <div class="stat-section">
+                    <h4 class="stat-section-title">Last 30 Days</h4>
+                    <div class="stat-item">
+                        <span class="stat-label">Activities</span>
+                        <span class="stat-value" id="month-activities">0</span>
+                    </div>
+                    <div class="stat-item">
+                        <span class="stat-label">Distance</span>
+                        <span class="stat-value" id="month-distance">0 km</span>
+                    </div>
+                    <div class="stat-item">
+                        <span class="stat-label">Time</span>
+                        <span class="stat-value" id="month-time">0h</span>
+                    </div>
+                </div>
+            </div>
+
+            <div class="sync-section">
+                <div id="strava-connected-indicator" class="hidden">
+                    <p class="last-sync">Last synced: <span id="last-sync-time">Never</span></p>
+                </div>
+            </div>
+        </aside>
+
+        <!-- Main Content -->
+        <main class="main-content">
+            <div class="welcome-message" id="welcome-message">
+                <h2>Welcome to Your Activity Dashboard! 🎉</h2>
+                <p>Connect your Strava account to start tracking and visualizing your activities.</p>
+            </div>
+
+            <div id="dashboard-content" class="hidden">
+                <!-- Charts Section -->
+                <section class="charts-section">
+                    <h2>Activity Overview</h2>
+                    <div class="charts-grid">
+                        <div class="chart-card chart-card-large">
+                            <div class="calendar-header">
+                                <button id="calendar-prev" class="calendar-nav-btn">←</button>
+                                <h3 id="calendar-month-title">Activity Calendar</h3>
+                                <button id="calendar-next" class="calendar-nav-btn">→</button>
+                            </div>
+                            <div id="activity-calendar" class="activity-calendar"></div>
+                        </div>
+                        <div class="chart-card chart-card-large" id="target-progress-card">
+                            <h3>Target Progress</h3>
+                            <div class="target-simple-grid">
+                                <div class="target-simple-item year-target-item">
+                                    <div class="target-item-with-visual">
+                                        <svg class="target-mini-donut" viewBox="0 0 36 36">
+                                            <path class="donut-bg" d="M18 2.0845 a 15.9155 15.9155 0 0 1 0 31.831 a 15.9155 15.9155 0 0 1 0 -31.831" />
+                                            <path class="donut-fill" id="year-donut-fill" stroke-dasharray="0, 100" d="M18 2.0845 a 15.9155 15.9155 0 0 1 0 31.831 a 15.9155 15.9155 0 0 1 0 -31.831" />
+                                        </svg>
+                                        <div class="target-item-text">
+                                            <div class="target-simple-number" id="target-year-number">0%</div>
+                                            <div class="target-simple-description" id="target-year-description">0 / 0 km</div>
+                                            <div class="target-simple-label">Year Target</div>
+                                        </div>
+                                    </div>
+                                </div>
+                                <div class="target-simple-item month-target-item">
+                                    <div class="target-item-with-visual">
+                                        <svg class="target-mini-donut" viewBox="0 0 36 36">
+                                            <path class="donut-bg" d="M18 2.0845 a 15.9155 15.9155 0 0 1 0 31.831 a 15.9155 15.9155 0 0 1 0 -31.831" />
+                                            <path class="donut-fill" id="month-donut-fill" stroke-dasharray="0, 100" d="M18 2.0845 a 15.9155 15.9155 0 0 1 0 31.831 a 15.9155 15.9155 0 0 1 0 -31.831" />
+                                        </svg>
+                                        <div class="target-item-text">
+                                            <div class="target-simple-number" id="target-month-number">0%</div>
+                                            <div class="target-simple-description" id="target-month-description">0 / 0 km</div>
+                                            <div class="target-simple-label">Month Target</div>
+                                        </div>
+                                    </div>
+                                </div>
+                                <div class="target-simple-item days-target-item">
+                                    <div class="target-simple-number large" id="target-days-number">-</div>
+                                    <div class="target-simple-label">Days Since Last Activity</div>
+                                </div>
+                            </div>
+                        </div>
+
+
+                        <div class="chart-card chart-card-large hidden" id="year-total-card">
+                            <h3>Year Total</h3>
+                            <div class="year-total-display">
+                                <div class="year-total-number" id="year-total-number">0</div>
+                                <div class="year-total-label">Activities in <span id="year-total-year">2025</span></div>
+                                <div class="days-since-last">
+                                    <div class="days-since-number" id="days-since-number">-</div>
+                                    <div class="days-since-label">Days Since Last Activity</div>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="chart-card chart-card-medium" id="year-progress-card">
+                            <h3>Year Progress</h3>
+                            <canvas id="yearProgressChart"></canvas>
+                        </div>
+                        <div class="chart-card chart-card-medium" id="elevation-progress-card">
+                            <h3>Elevation Progress</h3>
+                            <canvas id="elevationChart"></canvas>
+                        </div>
+                        <div class="chart-card chart-card-medium hidden" id="activity-count-card">
+                            <h3>Activity Frequency</h3>
+                            <canvas id="activityCountChart"></canvas>
+                        </div>
+                    </div>
+                </section>
+
+                <!-- Activities List -->
+                <section class="activities-section">
+                    <div class="activities-header">
+                        <h2>Recent Activities</h2>
+                        <div id="pagination-info" class="pagination-info hidden">
+                            Showing <span id="page-start">0</span>-<span id="page-end">0</span> of <span id="total-activities-count">0</span>
+                        </div>
+                    </div>
+                    <div id="activities-list" class="activities-list">
+                        <p class="loading">Loading activities...</p>
+                    </div>
+                    <div id="pagination-controls" class="pagination-controls hidden">
+                        <button id="prev-page-btn" class="btn btn-secondary" disabled>
+                            ← Previous
+                        </button>
+                        <div id="page-numbers" class="page-numbers"></div>
+                        <button id="next-page-btn" class="btn btn-secondary" disabled>
+                            Next →
+                        </button>
+                    </div>
+                </section>
+            </div>
+
+            <div id="loading-overlay" class="loading-overlay hidden">
+                <div class="spinner"></div>
+                <p>Syncing activities...</p>
+            </div>
+        </main>
+    </div>
+
+    <!-- Settings Modal -->
+    <div id="settings-modal" class="modal hidden">
+        <div class="modal-content settings-modal">
+            <span class="modal-close" id="settings-close">&times;</span>
+            <h2>⚙️ Settings</h2>
+            
+            <div class="settings-section">
+                <h3>👤 Account Information</h3>
+                <div class="settings-info-card">
+                    <div class="settings-info-item">
+                        <span class="settings-label">Email:</span>
+                        <span class="settings-value" id="settings-email">Loading...</span>
+                    </div>
+                    <div class="settings-info-item">
+                        <span class="settings-label">Name:</span>
+                        <span class="settings-value" id="settings-name">Loading...</span>
+                    </div>
+                </div>
+            </div>
+
+            <div class="settings-section">
+                <h3>🔗 Strava Connection</h3>
+                <div id="settings-strava-status">
+                    <div id="settings-not-connected" class="settings-card">
+                        <div class="settings-status">
+                            <span class="status-indicator status-disconnected">●</span>
+                            <span>Not connected to Strava</span>
+                        </div>
+                        <p class="settings-description">Connect your Strava account to sync and analyze your activities.</p>
+                        <button id="settings-connect-strava-btn" class="btn btn-strava">
+                            <svg width="20" height="20" viewBox="0 0 20 20" fill="white">
+                                <path d="M10 2L15 12H5L10 2Z"/>
+                                <path d="M10 12L12.5 17H7.5L10 12Z" opacity="0.6"/>
+                            </svg>
+                            Connect Strava Account
+                        </button>
+                    </div>
+                    <div id="settings-connected" class="settings-card hidden">
+                        <div class="settings-status">
+                            <span class="status-indicator status-connected">●</span>
+                            <span>Connected to Strava</span>
+                        </div>
+                        <p class="settings-description">Your Strava account is connected and ready to sync.</p>
+                        <div class="settings-info-item">
+                            <span class="settings-label">Athlete ID:</span>
+                            <span class="settings-value" id="settings-athlete-id">-</span>
+                        </div>
+                        <div class="settings-info-item">
+                            <span class="settings-label">Last Synced:</span>
+                            <span class="settings-value" id="settings-last-sync">Never</span>
+                        </div>
+                        <button id="settings-disconnect-strava-btn" class="btn btn-secondary">
+                            Disconnect Strava
+                        </button>
+                    </div>
+                </div>
+            </div>
+
+            <div class="settings-section">
+                <h3>📊 Data Management</h3>
+                <div class="settings-card">
+                    <p class="settings-description">Manage your synced activity data.</p>
+                    <div class="settings-info-item">
+                        <span class="settings-label">Total Activities:</span>
+                        <span class="settings-value" id="settings-activity-count">0</span>
+                    </div>
+                    <div class="settings-buttons">
+                        <button id="settings-sync-now-btn" class="btn btn-primary" disabled>
+                            🔄 Sync Activities Now
+                        </button>
+                        <button id="settings-delete-all-btn" class="btn btn-danger" disabled>
+                            🗑️ Delete All Activities
+                        </button>
+                    </div>
+                </div>
+            </div>
+
+            <div class="settings-section">
+                <h3>� Cache Management</h3>
+                <div class="settings-card">
+                    <p class="settings-description">Clear cached data to free up space or force fresh data load. Cache is automatically managed to minimize Firestore reads.</p>
+                    <div class="settings-info-item">
+                        <span class="settings-label">Cached Items:</span>
+                        <span class="settings-value" id="settings-cache-count">Calculating...</span>
+                    </div>
+                    <div class="settings-info-item">
+                        <span class="settings-label">Cache Size:</span>
+                        <span class="settings-value" id="settings-cache-size">Calculating...</span>
+                    </div>
+                    <div class="settings-buttons">
+                        <button id="settings-clear-cache-btn" class="btn btn-secondary">
+                            🗑️ Clear All Cache
+                        </button>
+                    </div>
+                </div>
+            </div>
+
+            <div class="settings-section">
+                <h3>�🚪 Account Actions</h3>
+                <div class="settings-card">
+                    <p class="settings-description">Sign out from your account.</p>
+                    <button id="logout-btn" class="btn btn-secondary" style="width: 100%;">
+                        Logout
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Activity Detail Modal -->
+    <div id="activity-modal" class="modal hidden">
+        <div class="modal-content">
+            <span class="modal-close">&times;</span>
+            <div id="modal-body">
+                <h2 id="modal-activity-name">Activity Name</h2>
+                <div class="modal-meta">
+                    <span id="modal-activity-type">Type</span> • <span id="modal-activity-date">Date</span>
+                </div>
+                
+                <div class="modal-stats-grid">
+                    <div class="modal-stat-card">
+                        <div class="modal-stat-icon">📏</div>
+                        <div class="modal-stat-value" id="modal-distance">0 km</div>
+                        <div class="modal-stat-label">Distance</div>
+                    </div>
+                    <div class="modal-stat-card">
+                        <div class="modal-stat-icon">⏱️</div>
+                        <div class="modal-stat-value" id="modal-time">0:00</div>
+                        <div class="modal-stat-label">Moving Time</div>
+                    </div>
+                    <div class="modal-stat-card">
+                        <div class="modal-stat-icon">⚡</div>
+                        <div class="modal-stat-value" id="modal-pace">0:00</div>
+                        <div class="modal-stat-label">Avg Pace</div>
+                    </div>
+                    <div class="modal-stat-card">
+                        <div class="modal-stat-icon">🏔️</div>
+                        <div class="modal-stat-value" id="modal-elevation">0 m</div>
+                        <div class="modal-stat-label">Elevation Gain</div>
+                    </div>
+                    <div class="modal-stat-card">
+                        <div class="modal-stat-icon">❤️</div>
+                        <div class="modal-stat-value" id="modal-hr-avg">-- bpm</div>
+                        <div class="modal-stat-label">Avg Heart Rate</div>
+                    </div>
+                    <div class="modal-stat-card">
+                        <div class="modal-stat-icon">💓</div>
+                        <div class="modal-stat-value" id="modal-hr-max">-- bpm</div>
+                        <div class="modal-stat-label">Max Heart Rate</div>
+                    </div>
+                    <div class="modal-stat-card">
+                        <div class="modal-stat-icon">🚀</div>
+                        <div class="modal-stat-value" id="modal-speed-avg">0 km/h</div>
+                        <div class="modal-stat-label">Avg Speed</div>
+                    </div>
+                    <div class="modal-stat-card">
+                        <div class="modal-stat-icon">⚡</div>
+                        <div class="modal-stat-value" id="modal-speed-max">0 km/h</div>
+                        <div class="modal-stat-label">Max Speed</div>
+                    </div>
+                    <div class="modal-stat-card">
+                        <div class="modal-stat-icon">👍</div>
+                        <div class="modal-stat-value" id="modal-kudos">0</div>
+                        <div class="modal-stat-label">Kudos</div>
+                    </div>
+                    <div class="modal-stat-card">
+                        <div class="modal-stat-icon">🏆</div>
+                        <div class="modal-stat-value" id="modal-achievements">0</div>
+                        <div class="modal-stat-label">Achievements</div>
+                    </div>
+                </div>
+
+                <!-- Route Map -->
+                <div id="modal-route-section" class="modal-route-section hidden">
+                    <h3>🗺️ Route Map</h3>
+                    <div id="modal-route-map" class="route-map-container">
+                        <!-- Leaflet map will be rendered here -->
+                    </div>
+                </div>
+
+                <!-- Detailed Stream Charts -->
+                <div id="modal-stream-section" class="modal-charts-section hidden">
+                    <h3>📊 Detailed Activity Analysis</h3>
+                    <div id="modal-stream-charts" class="modal-charts-grid">
+                        <!-- Stream-based charts will be inserted here -->
+                    </div>
+                </div>
+
+                <!-- Activity History Charts - REMOVED FOR CLEANER VIEW -->
+                <!-- <div class="modal-charts-section hidden">
+                    <h3>📈 Your Progress with This Activity Type</h3>
+                    <div id="modal-charts-container" class="modal-charts-grid">
+                    </div>
+                    <p id="modal-no-charts" class="hidden" style="text-align: center; color: var(--text-secondary); padding: 1rem;">
+                        Not enough activities of this type to show trends.
+                    </p>
+                </div> -->
+            </div>
+        </div>
+    </div>
+
+    <!-- Firebase SDKs -->
+    <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-app-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-auth-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore-compat.js"></script>
+    
+    <!-- Leaflet JS for Maps -->
+    <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"
+            integrity="sha256-20nQCchB9co0qIjJZRGuk2/Z9VM+kNiyxNV1lvTlZBo="
+            crossorigin=""></script>
+    
+    <!-- Chart.js -->
+    <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.js"></script>
+    
+    <!-- App Scripts -->
+    <script src="js/db-cache.js"></script>
+    <script src="js/auth.js"></script>
+    <script src="js/strava.js"></script>
+    <script src="js/charts.js"></script>
+    <script src="js/app.js"></script>
+</body>
+</html>

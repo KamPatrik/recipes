@@ -1,0 +1,39 @@
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+    
+    // Helper function to check if user is authenticated
+    function isAuthenticated() {
+      return request.auth != null;
+    }
+    
+    // Helper function to check if user owns the document
+    function isOwner(userId) {
+      return isAuthenticated() && request.auth.uid == userId;
+    }
+    
+    // Users collection - users can only read/write their own data
+    match /users/{userId} {
+      allow read: if isOwner(userId);
+      allow write: if isOwner(userId);
+      
+      // Activities subcollection - users can only access their own activities
+      match /activities/{activityId} {
+        allow read: if isOwner(userId);
+        allow write: if isOwner(userId);
+        
+        // Stream data subcollection - large time-series data stored separately
+        match /streamData/{streamDoc} {
+          allow read: if isOwner(userId);
+          allow write: if isOwner(userId);
+        }
+      }
+      
+      // Targets subcollection - users can only access their own year targets
+      match /targets/{targetId} {
+        allow read: if isOwner(userId);
+        allow write: if isOwner(userId);
+      }
+    }
+  }
+}

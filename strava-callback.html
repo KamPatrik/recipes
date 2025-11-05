@@ -1,0 +1,79 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Connecting to Strava...</title>
+    <link rel="icon" type="image/svg+xml" href="favicon.svg">
+    <link rel="stylesheet" href="css/styles.css">
+</head>
+<body class="callback-page">
+    <div class="callback-container">
+        <div class="spinner"></div>
+        <h2>Connecting to Strava...</h2>
+        <p id="callback-message">Please wait while we complete the connection.</p>
+    </div>
+
+    <!-- Firebase SDKs -->
+    <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-app-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-auth-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore-compat.js"></script>
+    
+    <!-- App Scripts -->
+    <script src="js/auth.js"></script>
+    <script src="js/strava.js"></script>
+    <script>
+        // Handle Strava OAuth callback
+        async function handleCallback() {
+            const urlParams = new URLSearchParams(window.location.search);
+            const code = urlParams.get('code');
+            const error = urlParams.get('error');
+            const messageEl = document.getElementById('callback-message');
+
+            if (error) {
+                messageEl.textContent = `Error: ${error}. Redirecting...`;
+                setTimeout(() => {
+                    window.location.href = 'dashboard.html';
+                }, 2000);
+                return;
+            }
+
+            if (!code) {
+                messageEl.textContent = 'No authorization code received. Redirecting...';
+                setTimeout(() => {
+                    window.location.href = 'dashboard.html';
+                }, 2000);
+                return;
+            }
+
+            try {
+                // Wait for auth to be ready
+                await new Promise((resolve) => {
+                    const unsubscribe = firebase.auth().onAuthStateChanged((user) => {
+                        if (user) {
+                            unsubscribe();
+                            resolve();
+                        }
+                    });
+                });
+
+                messageEl.textContent = 'Exchanging authorization code...';
+                await exchangeStravaToken(code);
+                
+                messageEl.textContent = 'Connection successful! Redirecting...';
+                setTimeout(() => {
+                    window.location.href = 'dashboard.html';
+                }, 1500);
+            } catch (error) {
+                console.error('Callback error:', error);
+                messageEl.textContent = `Error: ${error.message}. Redirecting...`;
+                setTimeout(() => {
+                    window.location.href = 'dashboard.html';
+                }, 2000);
+            }
+        }
+
+        handleCallback();
+    </script>
+</body>
+</html>

@@ -1,0 +1,347 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Firestore Rules Test</title>
+    <style>
+        body {
+            font-family: monospace;
+            max-width: 900px;
+            margin: 50px auto;
+            padding: 20px;
+            background: #1e1e1e;
+            color: #d4d4d4;
+        }
+        .test { 
+            margin: 20px 0; 
+            padding: 15px; 
+            border-radius: 5px;
+            background: #2d2d2d;
+        }
+        .success { border-left: 4px solid #4CAF50; }
+        .error { border-left: 4px solid #f44336; }
+        .pending { border-left: 4px solid #FF9800; }
+        button {
+            background: #fc4c02;
+            color: white;
+            border: none;
+            padding: 10px 20px;
+            border-radius: 4px;
+            cursor: pointer;
+            margin: 5px;
+        }
+        button:hover { background: #e04402; }
+        pre { 
+            background: #1a1a1a; 
+            padding: 10px; 
+            border-radius: 4px;
+            overflow-x: auto;
+        }
+    </style>
+</head>
+<body>
+    <h1>🔒 Firestore Rules Permission Test</h1>
+    
+    <div id="auth-status" class="test pending">
+        <h3>Authentication Status</h3>
+        <div id="auth-info">Checking...</div>
+    </div>
+
+    <div id="read-test" class="test pending">
+        <h3>Test 1: Read Activities</h3>
+        <button onclick="testReadActivities()">Run Test</button>
+        <pre id="read-result">Not run yet</pre>
+    </div>
+
+    <div id="write-test" class="test pending">
+        <h3>Test 2: Write Activity</h3>
+        <button onclick="testWriteActivity()">Run Test</button>
+        <pre id="write-result">Not run yet</pre>
+    </div>
+
+    <div id="delete-test" class="test pending">
+        <h3>Test 3: Delete Activity</h3>
+        <button onclick="testDeleteActivity()">Run Test</button>
+        <pre id="delete-result">Not run yet</pre>
+    </div>
+
+    <div id="stream-read-test" class="test pending">
+        <h3>Test 4: Read Stream Data</h3>
+        <button onclick="testReadStream()">Run Test</button>
+        <pre id="stream-read-result">Not run yet</pre>
+    </div>
+
+    <div id="stream-write-test" class="test pending">
+        <h3>Test 5: Write Stream Data</h3>
+        <button onclick="testWriteStream()">Run Test</button>
+        <pre id="stream-write-result">Not run yet</pre>
+    </div>
+
+    <div id="stream-delete-test" class="test pending">
+        <h3>Test 6: Delete Stream Data</h3>
+        <button onclick="testDeleteStream()">Run Test</button>
+        <pre id="stream-delete-result">Not run yet</pre>
+    </div>
+
+    <h2>🗑️ Delete All Activities</h2>
+    <button onclick="deleteAllSimple()">Delete All (Simple Method)</button>
+    <button onclick="deleteAllWithStreams()">Delete All (With Streams)</button>
+    <div id="delete-all-result" class="test">
+        <pre id="delete-all-output">Click a button above to delete activities</pre>
+    </div>
+
+    <!-- Firebase SDKs -->
+    <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-app-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-auth-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore-compat.js"></script>
+    
+    <script src="js/auth.js"></script>
+    <script src="js/strava.js"></script>
+
+    <script>
+        let testActivityId = 'test_' + Date.now();
+
+        // Check auth
+        auth.onAuthStateChanged((user) => {
+            const authDiv = document.getElementById('auth-status');
+            const authInfo = document.getElementById('auth-info');
+            
+            if (user) {
+                authDiv.className = 'test success';
+                authInfo.innerHTML = `✅ Logged in as: ${user.email}<br>User ID: ${user.uid}`;
+            } else {
+                authDiv.className = 'test error';
+                authInfo.innerHTML = '❌ Not logged in. Please log in first.';
+            }
+        });
+
+        async function testReadActivities() {
+            const result = document.getElementById('read-result');
+            const testDiv = document.getElementById('read-test');
+            
+            try {
+                result.textContent = 'Testing...';
+                const user = auth.currentUser;
+                
+                if (!user) {
+                    throw new Error('Not logged in');
+                }
+
+                const snapshot = await db.collection('users').doc(user.uid)
+                    .collection('activities').limit(5).get();
+                
+                result.textContent = `✅ SUCCESS\nFound ${snapshot.size} activities\n` + 
+                                     `First few IDs: ${snapshot.docs.map(d => d.id).join(', ')}`;
+                testDiv.className = 'test success';
+            } catch (error) {
+                result.textContent = `❌ FAILED\n${error.code}: ${error.message}`;
+                testDiv.className = 'test error';
+            }
+        }
+
+        async function testWriteActivity() {
+            const result = document.getElementById('write-result');
+            const testDiv = document.getElementById('write-test');
+            
+            try {
+                result.textContent = 'Testing...';
+                const user = auth.currentUser;
+                
+                if (!user) {
+                    throw new Error('Not logged in');
+                }
+
+                testActivityId = 'test_' + Date.now();
+                await db.collection('users').doc(user.uid)
+                    .collection('activities').doc(testActivityId)
+                    .set({
+                        id: testActivityId,
+                        name: 'Test Activity',
+                        type: 'Run',
+                        distance: 5000,
+                        createdAt: firebase.firestore.FieldValue.serverTimestamp()
+                    });
+                
+                result.textContent = `✅ SUCCESS\nCreated test activity: ${testActivityId}`;
+                testDiv.className = 'test success';
+            } catch (error) {
+                result.textContent = `❌ FAILED\n${error.code}: ${error.message}`;
+                testDiv.className = 'test error';
+            }
+        }
+
+        async function testDeleteActivity() {
+            const result = document.getElementById('delete-result');
+            const testDiv = document.getElementById('delete-test');
+            
+            try {
+                result.textContent = 'Testing...';
+                const user = auth.currentUser;
+                
+                if (!user) {
+                    throw new Error('Not logged in');
+                }
+
+                await db.collection('users').doc(user.uid)
+                    .collection('activities').doc(testActivityId)
+                    .delete();
+                
+                result.textContent = `✅ SUCCESS\nDeleted test activity: ${testActivityId}`;
+                testDiv.className = 'test success';
+            } catch (error) {
+                result.textContent = `❌ FAILED\n${error.code}: ${error.message}\n\nMake sure you ran Test 2 first!`;
+                testDiv.className = 'test error';
+            }
+        }
+
+        async function testReadStream() {
+            const result = document.getElementById('stream-read-result');
+            const testDiv = document.getElementById('stream-read-test');
+            
+            try {
+                result.textContent = 'Testing...';
+                const user = auth.currentUser;
+                
+                if (!user) {
+                    throw new Error('Not logged in');
+                }
+
+                // Get first activity
+                const activitySnapshot = await db.collection('users').doc(user.uid)
+                    .collection('activities').limit(1).get();
+                
+                if (activitySnapshot.empty) {
+                    result.textContent = '⚠️ No activities found to test with';
+                    testDiv.className = 'test pending';
+                    return;
+                }
+
+                const activityId = activitySnapshot.docs[0].id;
+                const streamSnapshot = await db.collection('users').doc(user.uid)
+                    .collection('activities').doc(activityId)
+                    .collection('streamData').get();
+                
+                result.textContent = `✅ SUCCESS\nActivity: ${activityId}\nStream docs: ${streamSnapshot.size}`;
+                testDiv.className = 'test success';
+            } catch (error) {
+                result.textContent = `❌ FAILED\n${error.code}: ${error.message}`;
+                testDiv.className = 'test error';
+            }
+        }
+
+        async function testWriteStream() {
+            const result = document.getElementById('stream-write-result');
+            const testDiv = document.getElementById('stream-write-test');
+            
+            try {
+                result.textContent = 'Testing...';
+                const user = auth.currentUser;
+                
+                if (!user) {
+                    throw new Error('Not logged in');
+                }
+
+                // Create test activity first
+                const testId = 'stream_test_' + Date.now();
+                await db.collection('users').doc(user.uid)
+                    .collection('activities').doc(testId)
+                    .set({ name: 'Stream Test', type: 'Run' });
+
+                // Try to write stream data
+                await db.collection('users').doc(user.uid)
+                    .collection('activities').doc(testId)
+                    .collection('streamData').doc('main')
+                    .set({
+                        heartrate: { data: [120, 130, 140] },
+                        time: { data: [0, 60, 120] }
+                    });
+                
+                result.textContent = `✅ SUCCESS\nCreated stream data for: ${testId}`;
+                testDiv.className = 'test success';
+            } catch (error) {
+                result.textContent = `❌ FAILED\n${error.code}: ${error.message}`;
+                testDiv.className = 'test error';
+            }
+        }
+
+        async function testDeleteStream() {
+            const result = document.getElementById('stream-delete-result');
+            const testDiv = document.getElementById('stream-delete-test');
+            
+            try {
+                result.textContent = 'Testing...';
+                const user = auth.currentUser;
+                
+                if (!user) {
+                    throw new Error('Not logged in');
+                }
+
+                // Find stream test activity
+                const snapshot = await db.collection('users').doc(user.uid)
+                    .collection('activities')
+                    .where('name', '==', 'Stream Test')
+                    .limit(1)
+                    .get();
+                
+                if (snapshot.empty) {
+                    result.textContent = '⚠️ No stream test activity found. Run Test 5 first.';
+                    testDiv.className = 'test pending';
+                    return;
+                }
+
+                const testId = snapshot.docs[0].id;
+                
+                // Delete stream data
+                await db.collection('users').doc(user.uid)
+                    .collection('activities').doc(testId)
+                    .collection('streamData').doc('main')
+                    .delete();
+
+                // Delete activity
+                await db.collection('users').doc(user.uid)
+                    .collection('activities').doc(testId)
+                    .delete();
+                
+                result.textContent = `✅ SUCCESS\nDeleted stream data and activity: ${testId}`;
+                testDiv.className = 'test success';
+            } catch (error) {
+                result.textContent = `❌ FAILED\n${error.code}: ${error.message}`;
+                testDiv.className = 'test error';
+            }
+        }
+
+        async function deleteAllSimple() {
+            const output = document.getElementById('delete-all-output');
+            try {
+                output.textContent = 'Deleting (simple method)...\n';
+                const count = await deleteAllActivitiesSimple();
+                output.textContent += `\n✅ Deleted ${count} activities`;
+            } catch (error) {
+                output.textContent += `\n❌ Error: ${error.message}`;
+            }
+        }
+
+        async function deleteAllWithStreams() {
+            const output = document.getElementById('delete-all-output');
+            try {
+                output.textContent = 'Deleting (with streams)...\n';
+                
+                // Override console.log to show progress
+                const originalLog = console.log;
+                console.log = function(...args) {
+                    originalLog.apply(console, args);
+                    output.textContent += args.join(' ') + '\n';
+                };
+                
+                const count = await deleteAllActivities();
+                
+                console.log = originalLog;
+                output.textContent += `\n✅ Deleted ${count} activities`;
+            } catch (error) {
+                output.textContent += `\n❌ Error: ${error.message}`;
+            }
+        }
+    </script>
+</body>
+</html>

@@ -1,0 +1,28 @@
+﻿
+// ========================================
+// SPEED ANALYSIS CHART
+// ========================================
+function setupSpeedChart() {
+    const periodButtons = document.querySelectorAll('.period-btn-speed');
+    const typeButtons = document.querySelectorAll('.chart-type-btn-speed');
+    
+    periodButtons.forEach(btn => {
+        btn.addEventListener('click', () => {
+            periodButtons.forEach(b => b.classList.remove('active'));
+            btn.classList.add('active');
+            speedPeriod = parseInt(btn.dataset.period);
+            updateSpeedChart();
+        });
+    });
+    
+    typeButtons.forEach(btn => {
+        btn.addEventListener('click', () => {
+            typeButtons.forEach(b => b.classList.remove('active'));
+            btn.classList.add('active');
+            speedChartType = btn.dataset.type;
+            updateSpeedChart();
+        });
+    });
+    
+    updateSpeedChart();
+}
